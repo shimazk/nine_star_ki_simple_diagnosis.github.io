@@ -12,9 +12,14 @@
     <meta id="meta" name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
 
     <title>九星気学の簡易鑑定ページ</title>
+    <style>
+        [v-cloak] {
+            display: none;
+        }
+    </style
 </head>
 <body>
-    <div id="app">
+    <div id="app" v-cloak>
         <p>
             <select v-model="birth_year">
                 <option v-for="(name, value) in indexRangeHash(1810, currentYear + 10)" v-bind:value="value">{{ name }}</option>
