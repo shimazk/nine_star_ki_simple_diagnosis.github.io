@@ -85,19 +85,25 @@
         packSelectorFunc("selectNineStarYear", arrayIndexHash(nine_star_name_arr));
         packSelectorFunc("selectNineStarMonth", arrayIndexHash(nine_star_name_arr));
         packSelectorFunc("selectNineStarSex", {0:'女', 1:'男'});
+
+        packSelectorFunc("selectUpperGua", arrayIndexHash(nature_name_arr));
+        packSelectorFunc("selectLowerGua", arrayIndexHash(nature_name_arr));
+        packSelectorFunc("selectNineStarCenter", arrayIndexHash(nine_star_name_arr));
         
         document.getElementById("buttonJudgment").onclick = function(button) {
-            // 九星気学の年度を返す //
-            var fiscalYear = function(dt) {
-                return ( dt.getMonth() <= 1 && dt.getDate() <= 3 ) ? dt.getFullYear() - 1 : dt.getFullYear();
+            // 九星気学の年月を返す //
+            var fiscalYearMonth = function(dt) {
+                let fiscal_year = ( dt.getMonth() <= 1 && dt.getDate() <= 3 ) ? dt.getFullYear() - 1 : dt.getFullYear();
+                
+                // 月初日は年によって変動があるため、月初日前後は正確に算出できてない
+                let div_day = [6, 4, 6, 5, 6, 6, 7, 8, 8, 9, 8, 8];
+                let fiscal_month = dt.getDate() <= div_day[dt.getMonth()] ? dt.getMonth() : dt.getMonth() + 1;
+                if (fiscal_month <= 0) {
+                    return [fiscal_year - 1, 11]
+                }
+                return [fiscal_year, fiscal_month];
             };
 
-            // 九星気学の月度を返す //
-            var fiscalMonth = function(dt) {
-                let div_day = [6, 4, 6, 5, 6, 6, 7, 8, 8, 9, 8, 8];
-                let ret = dt.getDate() < div_day[dt.getMonth()] ? dt.getMonth() : dt.getMonth() + 1;
-                return ret == 0 ? 9 : ret;
-            };
 
             // 本命を返す //
             var nineStarYear = function(fiscal_year) {
@@ -185,8 +191,10 @@
             let dt = new Date(selectedValue("selectYear"), selectedValue("selectMonth") - 1, selectedValue("selectDay"));
 
             let sex = selectedValue("selectSex");
-            let fiscal_year = fiscalYear(dt);
-            let fiscal_month = fiscalMonth(dt);
+            // let fiscal_year = fiscalYear(dt);
+            // let fiscal_month = fiscalMonth(dt);
+            let fiscal_year, fiscal_month;
+            [fiscal_year, fiscal_month] = fiscalYearMonth(dt);
 
             let oriental_zodiac_number = orientalZodiacNumber(fiscal_year);
             let oriental_zodiac_name = orientalZodiacName(oriental_zodiac_number);
@@ -329,13 +337,88 @@
             str = str + '<br>同会: ' + nineStarName(nine_star_dokai);
             str = str + '<br>傾斜: ' + nineStarName(nine_star_slope);
             document.getElementById("nineStarKi").innerHTML = str;
+
+            // 易経 //
+            let upper_number = nineStarToBaguaNumber(nine_star_month, sex);
+            let lower_number = nineStarToBaguaNumber(nine_star_year, sex);
+            document.getElementById("selectUpperGua").selectedIndex = upper_number - 1;
+            document.getElementById("selectLowerGua").selectedIndex = lower_number - 1;
+            document.getElementById("buttonYinYangView").click();
+
+            // 中宮 //
+            document.getElementById("selectNineStarCenter").selectedIndex = nine_star_slope - 1;
+            document.getElementById("buttonNineStarCenterView").click();
+        }
+
+
+        // 易の結果を表示 //
+        document.getElementById("buttonYinYangView").onclick = function(button) {
+            // 易卦名を返す //
+            var yinYangName = function (number_arr) {
+                let upper_index = number_arr[0] - 1;
+                let lower_index = number_arr[1] - 1;
+                if (upper_index == lower_index) {
+                    return bagua_name_arr[lower_index] + '為' + nature_name_arr[upper_index];
+                }
+                return nature_name_arr[upper_index] + nature_name_arr[lower_index] + yin_yang_name_saffix_arr[upper_index][lower_index];
+            }
+            // 裏卦を返す //
+            var rikaYinYangArr = function (number_arr) {
+                let ret = [];
+                return number_arr.map(function(num) {
+                    let arr_str = yin_yang_arr[num - 1].map(x => ! x).toString();
+                    return yin_yang_arr.findIndex(x => x.toString() == arr_str) + 1;
+                });
+            }
+
+            // 賓卦を返す //
+            var hinkaYinYangArr = function(number_arr) {
+                return number_arr.concat().reverse().map(function(num) {
+                    let arr_str = yin_yang_arr[num - 1].concat().reverse().toString();
+                    return yin_yang_arr.findIndex(x => x.toString() == arr_str) + 1;
+                });
+            }
+
+            // 互卦を返す //
+            var gokaYinYangArr = function(number_arr) {
+                let arr = yin_yang_arr[number_arr[0] - 1].concat(yin_yang_arr[number_arr[1] - 1]);
+                return [[arr[2], arr[3], arr[4]], [arr[1], arr[2], arr[3]]].map(function(a) {
+                    return yin_yang_arr.findIndex(x => x.toString() == a.toString()) + 1;
+                });
+            }
+
+            let upper_number = document.getElementById("selectUpperGua").selectedIndex + 1;
+            let lower_number = document.getElementById("selectLowerGua").selectedIndex + 1;
+            let number_arr = [upper_number, lower_number];
+            let yin_yang_name = yinYangName(number_arr);
+            let rika_yin_yang_name = yinYangName(rikaYinYangArr(number_arr));
+            let hinka_yin_yang_name = yinYangName(hinkaYinYangArr(number_arr)); 
+            let goka_yin_yang_name = yinYangName(gokaYinYangArr(number_arr));
+
+            str = '';
+            str = str + '大成卦: ' + yin_yang_name;
+            str = str + '<br>裏卦(錯卦): ' + rika_yin_yang_name;
+            str = str + '<br>賓卦(綜卦): ' + hinka_yin_yang_name;
+            str = str + '<br>互卦: ' + goka_yin_yang_name;
+            document.getElementById("yiChing").innerHTML = str;
+        }
+
+
+        // 九星気学の後転定位の結果を表示 //
+        document.getElementById("buttonNineStarCenterView").onclick = function(button) {
+            let idx = parseInt(selectedValue("selectNineStarCenter"));
+            let arr = [9, 5, 7, 8, 1, 3, 4, 6, 2].map(x => (x + idx) > 9 ? (x + idx) - 9 : (x + idx));
+            let html = '';
+            for (i = 0; i < 3; i++) {
+                html += '<tr>' + '<td>' + arr[i * 3] + '</td>' + '<td>' + arr[(i * 3) + 1] + '</td>' + '<td>' + arr[(i * 3) + 2] + '</td>' + '</tr>';
+            }
+            document.getElementById("nineStarCenter").innerHTML = '<table border="1" style="border-collapse: collapse;">' + html + '</table>';
         }
       }
 
     </script>
 </head>
 <body>
-    生年月日:
     <select name="YEAR" id="selectYear"></select>
     <select name="MONTH" id="selectMonth"></select>
     <select name="DAY" id="selectDay"></select>
@@ -344,13 +427,23 @@
     </br>
     <span id="orientalZodiac"></span>
     </br></br>
-    本命・月命：
     <select name="NINE_STAR_YEAR" id="selectNineStarYear"></select>
     <select name="NINE_STAR_MONTH" id="selectNineStarMonth"></select>
     <select name="NINE_STAR_SEX" id="selectNineStarSex"></select>
     <button id="buttonNineStarView"> 表示 </button>
     </br>
     <span id="nineStarKi"></span>
+    </br></br>
+    <select name="UPPER_GUA" id="selectUpperGua"></select>
+    <select name="LOWER_GUA" id="selectLowerGua"></select>
+    <button id="buttonYinYangView"> 表示 </button>
     </br>
+    <span id="yiChing"></span>
+    </br></br>
+    <select name="NINE_STAR_KI" id="selectNineStarCenter"></select>
+    <button id="buttonNineStarCenterView"> 中宮 </button>
+    </br>
+    <span id="nineStarCenter"></span>
+    <br>
 </body>
 </html>
