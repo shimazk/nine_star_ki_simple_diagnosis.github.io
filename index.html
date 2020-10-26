@@ -93,13 +93,13 @@
         document.getElementById("buttonJudgment").onclick = function(button) {
             // 九星気学の年月を返す //
             var fiscalYearMonth = function(dt) {
-                let fiscal_year = ( dt.getMonth() <= 1 && dt.getDate() <= 3 ) ? dt.getFullYear() - 1 : dt.getFullYear();
                 
                 // 月初日は年によって変動があるため、月初日前後は正確に算出できてない
                 let div_day = [6, 4, 6, 5, 6, 6, 7, 8, 8, 9, 8, 8];
-                let fiscal_month = dt.getDate() <= div_day[dt.getMonth()] ? dt.getMonth() : dt.getMonth() + 1;
+                let fiscal_month = dt.getDate() < div_day[dt.getMonth()] ? dt.getMonth() : dt.getMonth() + 1;
+                let fiscal_year = fiscal_month <= 1 ? dt.getFullYear() - 1 : dt.getFullYear();
                 if (fiscal_month <= 0) {
-                    return [fiscal_year - 1, 11]
+                    fiscal_month = 12;
                 }
                 return [fiscal_year, fiscal_month];
             };
